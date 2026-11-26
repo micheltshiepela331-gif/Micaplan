@@ -1,8 +1,13 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Secure default: no client can read or write until authentication and
-    // per-user authorization rules have been configured.
+    // Each signed-in user can access only their own Micaplan projects.
+    match /users/{userId}/projects/{projectId} {
+      allow read, create, update, delete: if request.auth != null
+        && request.auth.uid == userId;
+    }
+
+    // Deny all other documents unless a narrowly scoped rule is added later.
     match /{document=**} {
       allow read, write: if false;
     }

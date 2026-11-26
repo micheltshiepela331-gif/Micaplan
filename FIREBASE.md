@@ -1,21 +1,24 @@
-# Configuration Firebase de Micaplan
+# Firebase Micaplan — connexion rapide
 
-`firebase.js` contient la configuration Web Firebase fournie pour le projet `micaplan-e5ea4`. C'est une configuration cliente (elle n'est pas un mot de passe). Ne placez jamais de clé de compte de service dans le navigateur.
+Le projet Firebase `micaplan-e5ea4` a Firestore et la connexion Google configurés dans la console. `firebase.js` initialise Firebase; `firebase-auth.js` ajoute la connexion Google, la sauvegarde cloud et la restauration.
 
-## Connecter le module à Micaplan
+## Dernière étape de branchement au site
 
-Le JavaScript principal de `index.html` est déjà un module (`<script type="module">`). Ajoutez cette ligne avec ses imports en haut du module :
+Dans `index.html`, repérez le `<script type="module">` principal et ajoutez l'import ci-dessous juste après les imports de Three.js :
 
 ```js
-import { firebaseApp, db, analyticsReady } from './firebase.js';
+import './firebase-auth.js';
 ```
 
-La configuration initialise Firebase Analytics quand le navigateur le permet et initialise Firestore avec cache IndexedDB multi-onglets pour les données locales/hors connexion. Cette étape **ne sauvegarde pas encore les projets dans le cloud** : il faut encore créer la base de données Firestore dans la console Firebase, puis ajouter une authentification et des règles d'accès propres à chaque utilisateur avant d'autoriser les écritures.
+Enregistrez le fichier. L'import est nécessaire : créer les fichiers seuls ne modifie pas automatiquement la page.
 
-## Sécurité Firestore
+## Utilisation
 
-`firestore.rules` refuse toutes les lectures et écritures par défaut. C'est volontaire : n'utilisez pas de règles ouvertes du type `allow read, write: if true`. Déployez les règles sécurisées après avoir décidé du mode d'authentification et du format des documents.
+1. Publiez le site en HTTPS (GitHub Pages ou Firebase Hosting).
+2. Ouvrez Micaplan et appuyez sur **Connexion Google**.
+3. Dans l'application, appuyez d'abord sur **Enregistrer** (sauvegarde locale), puis **Enregistrer dans le cloud**. La sauvegarde cloud se synchronise aussi après le bouton Enregistrer local si l'utilisateur est connecté.
+4. **Restaurer du cloud** recharge le fichier dans l'outil d'import de Micaplan.
 
-## Exécution
+Les données sont stockées dans `users/{uid}/projects/current`; les règles `firestore.rules` limitent l'accès au propriétaire connecté. Déployez ces règles dans Firebase Console → Firestore Database → Règles, ou avec Firebase CLI. Ne publiez jamais de règles ouvertes.
 
-Servez l'application par HTTPS (par exemple GitHub Pages ou Firebase Hosting). Les imports de modules Firebase depuis le CDN ne fonctionneront pas correctement en ouvrant simplement le fichier local `file://`.
+Le code ne peut pas être activé depuis la console Firebase seule : il faut publier le changement de `index.html` dans le dépôt et attendre la fin du déploiement du site.
