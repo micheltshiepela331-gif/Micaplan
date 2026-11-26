@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#151a22">
+  <meta name="description" content="Micaplan, outil de dessin de plans accessible sur ordinateur, tablette et Android.">
+  <title>Micaplan — conception de plans</title>
+  <style>
+    :root{color-scheme:dark;--bg:#151a22;--panel:#202733;--panel2:#293342;--line:#3a4657;--text:#eef2f8;--muted:#a9b5c5;--accent:#ff9d42;--blue:#61c7ff;--safe-b:env(safe-area-inset-bottom,0px)}
+    *{box-sizing:border-box}html,body{height:100%;margin:0}body{background:var(--bg);color:var(--text);font:14px system-ui,-apple-system,"Segoe UI",sans-serif;overflow:hidden}button,input{font:inherit;color:inherit}button{cursor:pointer;touch-action:manipulation}button:focus-visible,input:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
+    #app{height:100%;height:100dvh;display:grid;grid-template-rows:auto auto 1fr auto;min-height:0}.top{display:flex;align-items:center;gap:8px;padding:8px 12px;background:#10141b;border-bottom:1px solid var(--line);min-width:0}.brand{font-weight:850;font-size:17px;color:var(--accent);white-space:nowrap;margin-right:4px}.brand span{color:var(--text)}.filename{margin-left:auto;width:min(34vw,320px);min-width:100px;background:#171d26;border:1px solid var(--line);border-radius:8px;padding:8px}.btn,.tool{border:1px solid var(--line);background:var(--panel2);border-radius:8px;padding:8px 10px;white-space:nowrap}.btn:hover,.tool:hover{border-color:var(--blue)}.btn:disabled{opacity:.45;cursor:default}.tabs{display:flex;gap:6px;overflow-x:auto;padding:7px 10px;background:var(--panel);scrollbar-width:thin}.tool.on{border-color:var(--accent);color:var(--accent);background:#49351f}.workspace{display:grid;grid-template-columns:58px 1fr;min-height:0}.tools{display:flex;flex-direction:column;gap:6px;padding:8px 6px;background:var(--panel);border-right:1px solid var(--line);overflow:auto}.tools .tool{width:44px;height:44px;padding:0;font-size:18px}.board{position:relative;min-width:0;min-height:0;overflow:hidden;background:#1a2029}canvas{display:block;width:100%;height:100%;touch-action:none;cursor:crosshair}.right-tools{position:absolute;right:10px;top:10px;display:grid;gap:6px}.right-tools button{width:42px;height:42px;padding:0;font-size:18px;box-shadow:0 2px 8px #0008}.help{position:absolute;left:10px;bottom:10px;max-width:min(65%,500px);padding:7px 10px;background:#10141bd9;border:1px solid var(--line);border-radius:8px;color:var(--muted);font-size:12px;pointer-events:none}.status{display:flex;align-items:center;gap:12px;padding:6px 12px calc(6px + var(--safe-b));background:#10141b;border-top:1px solid var(--line);color:var(--muted);font-size:12px;min-width:0}.status .coords{margin-left:auto;white-space:nowrap;font-variant-numeric:tabular-nums}.status label{white-space:nowrap}.status input{accent-color:var(--accent)}
+    @media(max-width:700px){#app{grid-template-rows:auto auto 1fr auto}.top{gap:5px;padding:6px 8px}.brand{font-size:15px}.top .btn{padding:7px 8px}.filename{width:32vw;min-width:85px;padding:7px 5px;font-size:12px}.tabs{padding:6px;gap:4px}.tabs .tool{font-size:12px;padding:7px 9px}.workspace{grid-template-columns:1fr;grid-template-rows:1fr}.tools{position:absolute;z-index:3;left:50%;bottom:calc(44px + var(--safe-b));transform:translateX(-50%);flex-direction:row;width:min(96vw,620px);justify-content:flex-start;overflow-x:auto;border:1px solid var(--line);border-radius:12px;background:#202733ee;padding:5px;box-shadow:0 4px 18px #0007}.tools .tool{flex:0 0 42px;width:42px;height:42px}.right-tools{right:7px;top:7px}.right-tools button{width:38px;height:38px}.help{bottom:calc(98px + var(--safe-b));font-size:11px;max-width:70%}.status{gap:8px;padding:5px 8px calc(5px + var(--safe-b));font-size:11px}.status label{display:flex;align-items:center;gap:3px}.status .coords{padding-left:4px}}
+    @media(max-width:390px){.top{gap:3px}.top .btn{font-size:12px;padding:7px 6px}.brand{font-size:14px}.filename{min-width:72px;width:27vw}.status .coords{font-size:10px}.help{max-width:66%}}
+  </style>
+</head>
+<body>
+<div id="app">
+  <header class="top">
+    <div class="brand">Mica<span>plan</span></div>
+    <button class="btn" id="undo" title="Annuler (Ctrl+Z)" aria-label="Annuler">↶</button>
+    <button class="btn" id="redo" title="Rétablir (Ctrl+Y)" aria-label="Rétablir">↷</button>
+    <button class="btn" id="save" title="Enregistrer sur cet appareil">💾</button>
+    <input class="filename" id="filename" aria-label="Nom du plan" value="Plan sans titre">
+    <button class="btn" id="export" title="Exporter une copie JSON">Exporter</button>
+    <button class="btn" id="import" title="Importer un plan JSON">Importer</button>
+    <input id="file" type="file" accept=".json,application/json" hidden>
+  </header>
+  <nav class="tabs" aria-label="Outils de plan">
+    <button class="tool on" data-tool="select">Sélection</button><button class="tool" data-tool="wall">Mur</button><button class="tool" data-tool="line">Ligne</button><button class="tool" data-tool="rect">Rectangle</button><button class="tool" data-tool="circle">Cercle</button>
+  </nav>
+  <main class="workspace">
+    <nav class="tools" aria-label="Outils rapides">
+      <button class="tool on" data-tool="select" title="Sélection">↖</button><button class="tool" data-tool="wall" title="Tracer un mur">▰</button><button class="tool" data-tool="line" title="Tracer une ligne">／</button><button class="tool" data-tool="rect" title="Tracer un rectangle">▱</button><button class="tool" data-tool="circle" title="Tracer un cercle">◯</button><button class="tool" id="delete" title="Supprimer la sélection">⌫</button>
+    </nav>
+    <section class="board" id="board" aria-label="Zone de dessin">
+      <canvas id="canvas" aria-label="Plan, zone de dessin interactive"></canvas>
+      <div class="right-tools"><button class="btn" id="zoomIn" title="Zoom avant">＋</button><button class="btn" id="zoomOut" title="Zoom arrière">−</button><button class="btn" id="fit" title="Afficher tout le plan">⛶</button></div>
+      <div class="help" id="help">Molette ou pincement : zoom · Glisser avec le bouton droit ou Espace : déplacer la vue · Choisissez un outil pour dessiner.</div>
+    </section>
+  </main>
+  <footer class="status">
+    <label><input id="grid" type="checkbox" checked> Grille</label><label><input id="snap" type="checkbox" checked> Aimant</label>
+    <span id="message" role="status" aria-live="polite">Prêt</span><span class="coords" id="coords">X 0,00 · Y 0,00 m · Zoom 100 %</span>
+  </footer>
+</div>
+<script>
+'use strict';
+(() => {
+  const $ = id => document.getElementById(id);
+  const canvas = $('canvas'), ctx = canvas.getContext('2d', {alpha:false}), board = $('board');
+  const STORAGE = 'micaplan.v1';
+  const MIN_ZOOM = 0.025, MAX_ZOOM = 1200, GRID_STEP = 0.25, MAX_UNDO = 80;
+  let entities = [], selection = null, tool = 'select', draft = null, pointers = new Map(), gesture = null;
+  let undoStack = [], redoStack = [], frame = 0, dpr = 1, spaceDown = false;
+  const view = {scale:48, x:48, y:48};
+  const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const clone = x => JSON.parse(JSON.stringify(x));
+  const tell = s => { $('message').textContent = s; };
+  const world = (x,y) => [(x-view.x)/view.scale, (canvas.clientHeight-y-view.y)/view.scale];
+  const screen = p => [view.x+p[0]*view.scale,canvas.clientHeight-view.y-p[1]*view.scale];
+  const snapPoint = p => $('snap').checked ? p.map(v=>Math.round(v/GRID_STEP)*GRID_STEP) : p;
+  function snapshot(){undoStack.push(JSON.stringify(entities));if(undoStack.length>MAX_UNDO)undoStack.shift();redoStack=[];updateButtons();}
+  function updateButtons(){ $('undo').disabled=!undoStack.length; $('redo').disabled=!redoStack.length; }
+  function undo(){if(!undoStack.length)return;redoStack.push(JSON.stringify(entities));entities=JSON.parse(undoStack.pop());selection=null;requestDraw();updateButtons();persist();tell('Modification annulée');}
+  function redo(){if(!redoStack.length)return;undoStack.push(JSON.stringify(entities));entities=JSON.parse(redoStack.pop());selection=null;requestDraw();updateButtons();persist();tell('Modification rétablie');}
+  function persist(){try{localStorage.setItem(STORAGE,JSON.stringify({version:1,name:$('filename').value,entities}));}catch(e){tell('Stockage local indisponible : utilisez Exporter pour garder une copie.');}}
+  function loadSaved(){try{const d=JSON.parse(localStorage.getItem(STORAGE)||'null');if(d&&d.version===1&&Array.isArray(d.entities)){entities=d.entities.filter(validEntity);$('filename').value=String(d.name||'Plan sans titre').slice(0,100);}}catch(e){tell('Sauvegarde locale illisible : un nouveau plan est prêt.');}}
+  function validEntity(e){return e&&['wall','line','rect','circle'].includes(e.type)&&Array.isArray(e.a)&&e.a.length===2&&e.a.every(Number.isFinite)&&Array.isArray(e.b)&&e.b.length===2&&e.b.every(Number.isFinite)&&Number.isFinite(e.width||0);}
+  function resize(){const r=board.getBoundingClientRect();dpr=Math.max(1,Math.min(2,window.devicePixelRatio||1));canvas.width=Math.max(1,Math.round(r.width*dpr));canvas.height=Math.max(1,Math.round(r.height*dpr));ctx.setTransform(dpr,0,0,dpr,0,0);requestDraw();}
+  function requestDraw(){if(frame)return;frame=requestAnimationFrame(()=>{frame=0;draw();});}
+  function drawGrid(){const w=canvas.clientWidth,h=canvas.clientHeight,s=view.scale;let step=GRID_STEP;while(step*s<18)step*=2;while(step*s>100)step/=2;const a=world(0,h),b=world(w,0);const x0=Math.floor(a[0]/step),x1=Math.ceil(b[0]/step),y0=Math.floor(a[1]/step),y1=Math.ceil(b[1]/step);ctx.save();ctx.lineWidth=1;ctx.strokeStyle='rgba(190,205,225,.09)';ctx.beginPath();for(let i=x0;i<=x1&&i-x0<500;i++){let p=screen([i*step,0])[0]+.5;ctx.moveTo(p,0);ctx.lineTo(p,h);}for(let i=y0;i<=y1&&i-y0<500;i++){let p=screen([0,i*step])[1]+.5;ctx.moveTo(0,p);ctx.lineTo(w,p);}ctx.stroke();ctx.restore();}
+  function drawEntity(e,preview=false){const a=screen(e.a),b=screen(e.b),selected=e===selection;ctx.save();ctx.strokeStyle=selected?'#61c7ff':preview?'#ffbf7a':e.type==='wall'?'#f0e2cf':'#f6a14e';ctx.lineWidth=selected?3:e.type==='wall'?Math.max(3,e.width*view.scale):2;ctx.lineCap='round';ctx.lineJoin='round';ctx.beginPath();if(e.type==='circle'){const r=Math.hypot(b[0]-a[0],b[1]-a[1]);ctx.arc(a[0],a[1],r,0,Math.PI*2);}else if(e.type==='rect'){ctx.rect(a[0],a[1],b[0]-a[0],b[1]-a[1]);}else if(e.type==='wall'){const dx=b[0]-a[0],dy=b[1]-a[1],l=Math.hypot(dx,dy)||1,off=e.width*view.scale/2,nx=-dy/l*off,ny=dx/l*off;ctx.moveTo(a[0]+nx,a[1]+ny);ctx.lineTo(b[0]+nx,b[1]+ny);ctx.lineTo(b[0]-nx,b[1]-ny);ctx.lineTo(a[0]-nx,a[1]-ny);ctx.closePath();ctx.fillStyle=selected?'rgba(97,199,255,.2)':'rgba(240,226,207,.12)';ctx.fill();}else{ctx.moveTo(a[0],a[1]);ctx.lineTo(b[0],b[1]);}ctx.stroke();if(selected){ctx.fillStyle='#61c7ff';[a,b].forEach(p=>{ctx.beginPath();ctx.arc(p[0],p[1],4,0,Math.PI*2);ctx.fill();});}ctx.restore();}
+  function draw(){const w=canvas.clientWidth,h=canvas.clientHeight;if(!w||!h)return;ctx.setTransform(dpr,0,0,dpr,0,0);ctx.fillStyle='#1a2029';ctx.fillRect(0,0,w,h);if($('grid').checked)drawGrid();entities.forEach(e=>drawEntity(e));if(draft)drawEntity(draft,true);const p=gesture&&gesture.current;if(p&&tool==='select'&&gesture.kind==='box'){const a=gesture.start;ctx.save();ctx.strokeStyle='#61c7ff';ctx.setLineDash([5,4]);ctx.strokeRect(a[0],a[1],p[0]-a[0],p[1]-a[1]);ctx.restore();}updateCoords();}
+  function updateCoords(){const p=world(canvas.clientWidth/2,canvas.clientHeight/2);$('coords').textContent=`X ${p[0].toFixed(2).replace('.',',')} · Y ${p[1].toFixed(2).replace('.',',')} m · Zoom ${Math.round(view.scale/48*100)} %`;}
+  function setTool(t){tool=t;draft=null;gesture=null;document.querySelectorAll('[data-tool]').forEach(b=>b.classList.toggle('on',b.dataset.tool===t));$('help').textContent=t==='select'?'Touchez un objet pour le sélectionner. Espace ou bouton droit : déplacer la vue.':'Touchez puis faites glisser sur le plan pour dessiner. Molette / pincement : zoom.';requestDraw();}
+  function zoomAt(x,y,f){const before=world(x,y);view.scale=Math.max(MIN_ZOOM,Math.min(MAX_ZOOM,view.scale*f));view.x=x-before[0]*view.scale;view.y=canvas.clientHeight-y-before[1]*view.scale;requestDraw();}
+  function fit(){if(!entities.length){view.scale=48;view.x=48;view.y=48;requestDraw();return;}const pts=entities.flatMap(e=>[e.a,e.b]);let minX=Math.min(...pts.map(p=>p[0])),maxX=Math.max(...pts.map(p=>p[0])),minY=Math.min(...pts.map(p=>p[1])),maxY=Math.max(...pts.map(p=>p[1]));const pad=1,w=Math.max(.5,maxX-minX+pad*2),h=Math.max(.5,maxY-minY+pad*2);view.scale=Math.max(MIN_ZOOM,Math.min(MAX_ZOOM,Math.min((canvas.clientWidth-48)/w,(canvas.clientHeight-48)/h)));view.x=canvas.clientWidth/2-(minX+maxX)/2*view.scale;view.y=canvas.clientHeight/2+(minY+maxY)/2*view.scale;requestDraw();}
+  function hit(p){let best=null,bd=0.25;for(const e of entities){const q=world(...p);let d;if(e.type==='circle')d=Math.abs(Math.hypot(q[0]-e.a[0],q[1]-e.a[1])-Math.hypot(e.b[0]-e.a[0],e.b[1]-e.a[1]));else if(e.type==='rect'){const x0=Math.min(e.a[0],e.b[0]),x1=Math.max(e.a[0],e.b[0]),y0=Math.min(e.a[1],e.b[1]),y1=Math.max(e.a[1],e.b[1]);d=q[0]>=x0&&q[0]<=x1&&q[1]>=y0&&q[1]<=y1?0:Math.min(...[[[x0,y0],[x1,y0]],[[x1,y0],[x1,y1]],[[x1,y1],[x0,y1]],[[x0,y1],[x0,y0]]].map(([a,b])=>segDist(q,a,b)));}else d=segDist(q,e.a,e.b);if(d<bd){bd=d;best=e;}}return best;}
+  function segDist(p,a,b){const dx=b[0]-a[0],dy=b[1]-a[1],t=Math.max(0,Math.min(1,((p[0]-a[0])*dx+(p[1]-a[1])*dy)/(dx*dx+dy*dy||1)));return Math.hypot(p[0]-a[0]-t*dx,p[1]-a[1]-t*dy);}
+  function localPos(e){const r=canvas.getBoundingClientRect();return [e.clientX-r.left,e.clientY-r.top];}
+  canvas.addEventListener('contextmenu',e=>e.preventDefault());
+  canvas.addEventListener('pointerdown',e=>{e.preventDefault();canvas.setPointerCapture?.(e.pointerId);const pos=localPos(e);pointers.set(e.pointerId,pos);if(pointers.size===2){const [p1,p2]=[...pointers.values()];gesture={kind:'pinch',distance:Math.max(1,Math.hypot(p1[0]-p2[0],p1[1]-p2[1])),scale:view.scale,center:[(p1[0]+p2[0])/2,(p1[1]+p2[1])/2]};draft=null;return;}const pan=spaceDown||e.button===1||e.button===2;if(pan){gesture={kind:'pan',start:pos,last:pos};return;}if(tool==='select'){const h=hit(pos);if(h){selection=h;gesture={kind:'move',start:world(...pos),origin:clone(h),moved:false};}else{selection=null;gesture={kind:'box',start:pos,current:pos};}requestDraw();return;}const p=snapPoint(world(...pos));draft={type:tool,a:p,b:p,width:0.15};gesture={kind:'draw',start:p,current:p};requestDraw();});
+  canvas.addEventListener('pointermove',e=>{const pos=localPos(e);if(pointers.has(e.pointerId))pointers.set(e.pointerId,pos);if(pointers.size>=2&&gesture?.kind==='pinch'){const [a,b]=[...pointers.values()],d=Math.max(1,Math.hypot(a[0]-b[0],a[1]-b[1])),c=[(a[0]+b[0])/2,(a[1]+b[1])/2];zoomAt(c[0],c[1],d/gesture.distance);gesture.distance=d;gesture.center=c;gesture.scale=view.scale;return;}if(!gesture)return;if(gesture.kind==='pan'){view.x+=pos[0]-gesture.last[0];view.y+=pos[1]-gesture.last[1];gesture.last=pos;}else if(gesture.kind==='draw'){const p=snapPoint(world(...pos));gesture.current=p;draft.b=p;}else if(gesture.kind==='box')gesture.current=pos;else if(gesture.kind==='move'){const p=snapPoint(world(...pos)),d=[p[0]-gesture.start[0],p[1]-gesture.start[1]];selection.a=[gesture.origin.a[0]+d[0],gesture.origin.a[1]+d[1]];selection.b=[gesture.origin.b[0]+d[0],gesture.origin.b[1]+d[1]];gesture.moved=true;}requestDraw();});
+  function finishPointer(e){pointers.delete(e.pointerId);if(pointers.size){if(pointers.size===1){const p=[...pointers.values()][0];gesture={kind:'pan',start:p,last:p};}return;}if(!gesture)return;const g=gesture;gesture=null;if(g.kind==='draw'&&draft){const d=draft;draft=null;if(Math.hypot(d.b[0]-d.a[0],d.b[1]-d.a[1])>0.02){snapshot();entities.push(d);selection=d;persist();tell(`${d.type==='wall'?'Mur':d.type==='rect'?'Rectangle':d.type==='circle'?'Cercle':'Ligne'} ajouté`);}}else if(g.kind==='move'&&g.moved){snapshot();persist();}else if(g.kind==='box'){const a=world(...g.start),b=world(...g.current);const x0=Math.min(a[0],b[0]),x1=Math.max(a[0],b[0]),y0=Math.min(a[1],b[1]),y1=Math.max(a[1],b[1]);selection=entities.find(e=>{const bb=[Math.min(e.a[0],e.b[0]),Math.min(e.a[1],e.b[1]),Math.max(e.a[0],e.b[0]),Math.max(e.a[1],e.b[1])];return bb[0]>=x0&&bb[2]<=x1&&bb[1]>=y0&&bb[3]<=y1;})||null;}requestDraw();}
+  canvas.addEventListener('pointerup',finishPointer);canvas.addEventListener('pointercancel',e=>{pointers.delete(e.pointerId);gesture=null;draft=null;requestDraw();});canvas.addEventListener('wheel',e=>{e.preventDefault();const p=localPos(e);zoomAt(p[0],p[1],Math.exp(-e.deltaY*0.0015));},{passive:false});
+  document.querySelectorAll('[data-tool]').forEach(b=>b.addEventListener('click',()=>setTool(b.dataset.tool)));
+  $('zoomIn').onclick=()=>zoomAt(canvas.clientWidth/2,canvas.clientHeight/2,1.35);$('zoomOut').onclick=()=>zoomAt(canvas.clientWidth/2,canvas.clientHeight/2,1/1.35);$('fit').onclick=fit;$('undo').onclick=undo;$('redo').onclick=redo;
+  $('delete').onclick=()=>{if(!selection)return tell('Sélectionnez un objet à supprimer.');snapshot();entities=entities.filter(e=>e!==selection);selection=null;persist();requestDraw();tell('Objet supprimé');};
+  $('save').onclick=()=>{persist();tell('Plan enregistré sur cet appareil.');};$('filename').addEventListener('change',persist);$('grid').onchange=requestDraw;
+  $('export').onclick=()=>{const blob=new Blob([JSON.stringify({version:1,name:$('filename').value,entities},null,2)],{type:'application/json'}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=(($('filename').value||'micaplan').replace(/[^\p{L}\p{N}_-]+/gu,'_'))+'.json';a.click();URL.revokeObjectURL(a.href);tell('Copie JSON téléchargée.');};
+  $('import').onclick=()=> $('file').click();$('file').onchange=async e=>{const f=e.target.files?.[0];e.target.value='';if(!f)return;try{const d=JSON.parse(await f.text());if(!Array.isArray(d.entities)||!d.entities.every(validEntity))throw Error('Format de plan non reconnu');snapshot();entities=d.entities;$('filename').value=String(d.name||f.name.replace(/\.json$/i,'')).slice(0,100);selection=null;persist();fit();tell(`${entities.length} objet(s) importé(s).`);}catch(err){tell('Import impossible : choisissez un fichier JSON Micaplan valide.');}};
+  window.addEventListener('keydown',e=>{if(e.code==='Space'&&!/INPUT|TEXTAREA/.test(document.activeElement.tagName)){spaceDown=true;e.preventDefault();}if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='z'){e.preventDefault();e.shiftKey?redo():undo();}if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='y'){e.preventDefault();redo();}if(e.key==='Escape'){draft=null;gesture=null;requestDraw();}if((e.key==='Delete'||e.key==='Backspace')&&selection){e.preventDefault();$('delete').click();}});window.addEventListener('keyup',e=>{if(e.code==='Space')spaceDown=false;});
+  if('ResizeObserver'in window)new ResizeObserver(resize).observe(board);else window.addEventListener('resize',resize);
+  loadSaved();resize();updateButtons();if(entities.length)fit();
+})();
+</script>
+</body>
+</html>
